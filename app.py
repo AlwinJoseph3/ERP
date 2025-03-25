@@ -104,7 +104,7 @@ def recommend_restock():
     if request.method == "GET":
         threshold = 10
         recommendations = [
-            {"name": item["Product Name"], "stock": int(item["Stock"]), "restock_needed": threshold - int(item["Stock"])}
+            {"name": item["Product Name"], "stock": int(item["Stock"]), "restock_needed": 50 - int(item["Stock"])}
             for item in inventory if int(item["Stock"]) < threshold
         ]
 
