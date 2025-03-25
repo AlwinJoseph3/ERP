@@ -1,10 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 import csv
 import os
 
 app = Flask(__name__)
+app.secret_key = 'agidurenju'  # Change this to a strong secret key
 
 FILE_NAME = "inventory.csv"
+
+USERS = {"admin": "password123"}
+
 
 def load_inventory():
     """Load inventory from CSV."""
@@ -23,8 +27,32 @@ def save_inventory(inventory):
         writer.writeheader()
         writer.writerows(inventory)
 
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        if username in USERS and USERS[username] == password:
+            session["user"] = username
+            return redirect(url_for("home"))
+        else:
+            return render_template("login.html", error="Invalid username or password")
+
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.pop("user", None)
+    return redirect(url_for("login"))        
+
 @app.route('/')
 def home():
+    if "user" not in session:
+        return redirect(url_for("login"))  # Redirect to login page if not logged in
+
+
     inventory = load_inventory()
     return render_template("index.html", inventory=inventory)
 
@@ -104,7 +132,7 @@ def recommend_restock():
     if request.method == "GET":
         threshold = 10
         recommendations = [
-            {"name": item["Product Name"], "stock": int(item["Stock"]), "restock_needed": 50 - int(item["Stock"])}
+            {"name": item["Product Name"], "stock": int(item["Stock"]), "restock_needed": threshold - int(item["Stock"])}
             for item in inventory if int(item["Stock"]) < threshold
         ]
 
